@@ -1,0 +1,6 @@
+*.so
+build
+.vscode
+.venv
+.idea
+*.cpp
