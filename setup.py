@@ -28,18 +28,18 @@ from Cython.Build import cythonize
 import numpy
 
 extensions = [
-    Extension("adlink",
+    Extension("d2kdask",
               sources=["d2kdask.pyx"],
               include_dirs=[numpy.get_include(),
-                            '/usr/local/src/adlink/include'],
-              library_dirs=['/usr/local/src/adlink/lib'],
+                            'driver/include'],
+              library_dirs=['driver/lib'],
               libraries=['pci_dask2k64'],
               extra_compile_args=["-O3"],
               language="c++")
 ]
 
 setup(
-    name="adlink",
+    name="d2kdask",
     version=__version__,
     license=__license__,
     author=__author__,
