@@ -45,8 +45,61 @@ cdef extern from "d2kdask.h":
     cdef int DAQ2K_AI_TrgPositive
     cdef int DAQ2K_AI_TrgNegative
 
+    # Synch/Asynch Operation Modes
+    cdef int SYNCH_OP
+
     # Return Codes
     cdef int NoError
     cdef int ErrorInvalidCardNumber
     cdef int ErrorCardNotRegistered
     cdef int ErrorFuncNotSupport
+    cdef int ErrorTransferCountTooLarge
+    cdef int ErrorContIoNotAllowed
+
+
+    # AD Ranges
+    cdef int AD_B_10_V    
+    cdef int AD_B_5_V     
+    cdef int AD_B_2_5_V   
+    cdef int AD_B_1_25_V  
+    cdef int AD_B_0_625_V 
+    cdef int AD_B_0_3125_V
+    cdef int AD_B_0_5_V   
+    cdef int AD_B_0_05_V  
+    cdef int AD_B_0_005_V 
+    cdef int AD_B_1_V     
+    cdef int AD_B_0_1_V   
+    cdef int AD_B_0_01_V  
+    cdef int AD_B_0_001_V 
+    cdef int AD_U_20_V    
+    cdef int AD_U_10_V    
+    cdef int AD_U_5_V     
+    cdef int AD_U_2_5_V   
+    cdef int AD_U_1_25_V  
+    cdef int AD_U_1_V     
+    cdef int AD_U_0_1_V   
+    cdef int AD_U_0_01_V  
+    cdef int AD_U_0_001_V 
+    cdef int AD_B_2_V     
+    cdef int AD_B_0_25_V  
+    cdef int AD_B_0_2_V   
+    cdef int AD_U_4_V     
+    cdef int AD_U_2_V     
+    cdef int AD_U_0_5_V   
+    cdef int AD_U_0_4_V
+
+    # Cards
+    cdef int DAQ_2010
+    cdef int DAQ_2205
+    cdef int DAQ_2206
+    cdef int DAQ_2005
+    cdef int DAQ_2204
+    cdef int DAQ_2006
+    cdef int DAQ_2501
+    cdef int DAQ_2502
+    cdef int DAQ_2208
+    cdef int DAQ_2213 
+    cdef int DAQ_2214 
+    cdef int DAQ_2016 
+    cdef int DAQ_2020 
+    cdef int DAQ_2022 
