@@ -121,6 +121,7 @@ cdef class Buffer:
 
 cdef class D200X:
     cdef int card_id
+    cdef Buffer buffer
 
     def __cinit__(self, int card_type, int card_num):
         self.card_id = d2kdask.D2K_Register_Card(card_type, card_num)
