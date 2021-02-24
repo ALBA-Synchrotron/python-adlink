@@ -5,3 +5,5 @@ build
 .idea
 *.cpp
 driver
+*.dat
+*.png
