@@ -1,0 +1,1 @@
+docker run -v $PWD:/app -v /homelocal/sicilia/src/adlink/d2k-dask_233_2005_20_64:/app/driver -e LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/app/driver/lib" --entrypoint /bin/bash -it python:latest
