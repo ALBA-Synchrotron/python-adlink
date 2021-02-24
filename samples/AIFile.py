@@ -38,8 +38,8 @@ def main():
     for i in range(4):
         card.ai_channel_config(i, v_range)
 
-    card.ai_config(config_control=0,
-                   trigger_control=0,
+    card.ai_config(config_control=d2kdask.ADConversionSourceSelection.Internal,
+                   trigger_control=d2kdask.Trigger.Source.Software,
                    middle_or_delay_scans=0,
                    m_counter=0,
                    re_trigger_counter=0,

@@ -146,7 +146,7 @@ cdef class D200X:
                     int m_counter,
                     int re_trigger_counter,
                     d2kdask.BOOLEAN auto_reset_buf):
-        cdef int err = d2kdask.D2K_AI_Config(self.card_id, config_control, trigger_control, 
+        cdef int err = d2kdask.D2K_AI_Config(self.card_id, config_control.value, trigger_control.value, 
                             middle_or_delay_scans, m_counter, re_trigger_counter, auto_reset_buf)
         
         error(err)
