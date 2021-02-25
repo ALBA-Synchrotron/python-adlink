@@ -8,7 +8,7 @@ from enum import Enum
 class AdlinkException(Exception):
     pass
 
-cdef error(int error_code):
+cpdef error(int error_code):
     if error_code == d2kdask.NoError:
         return
     elif error_code == d2kdask.ErrorInvalidCardNumber:
@@ -21,8 +21,13 @@ cdef error(int error_code):
         raise AdlinkException("TransferCountTooLarge")
     elif error_code == d2kdask.ErrorContIoNotAllowed:
         raise AdlinkException("ErrorContIoNotAllowed")
+    elif error_code == d2kdask.ErrorInvalidDaRefVoltage:
+        raise AdlinkException("ErrorInvalidDaRefVoltage")
+    elif error_code == d2kdask.ErrorDaVoltageOutOfRange:
+        raise AdlinkException("ErrorDaVoltageOutOfRange")
     else:
         raise AdlinkException("Unknown error.")
+
 
 class Card(Enum):
     DAQ_2010= d2kdask.DAQ_2010
@@ -99,6 +104,19 @@ class VoltageRange(Enum):
     AD_U_0_4_V = d2kdask.AD_U_0_4_V
 
 
+class Polarity(Enum):
+    Bipolar = d2kdask.DAQ2K_DA_BiPolar
+    Unipolar = d2kdask.DAQ2K_DA_UniPolar
+
+
+class Reference(Enum):
+    Internal = d2kdask.DAQ2K_DA_Int_REF
+    External = d2kdask.DAQ2K_DA_Ext_REF
+
+class OutputChannel(Enum):
+    Zero = 0
+    One = 1
+    All = -1
 
 cdef class Buffer:
     cdef unsigned short* buffer
@@ -157,3 +175,16 @@ cdef class D200X:
             return d2kdask.NoError
         else:
             raise AdlinkException("Error in ai_continuous_scan_to_file")
+
+
+    def ao_channel_config(self, channel: OutputChannel, output_polarity: Polarity, reference: Reference, ref_voltage: float):
+        err = d2kdask.D2K_AO_CH_Config(self.card_id, channel.value, output_polarity.value, reference.value, ref_voltage)
+        error(err)
+
+
+    def ao_voltage_write_channel(self, channel: OutputChannel, voltage: float):
+        err = d2kdask.D2K_AO_VWriteChannel(self.card_id, channel.value, voltage)
+        error(err)
+
+        
+        

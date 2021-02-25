@@ -3,6 +3,7 @@ cdef extern from "d2kdask.h":
     ctypedef unsigned short U16
     ctypedef unsigned char U8
     ctypedef unsigned long U32
+    ctypedef double F64
     ctypedef enum BOOLEAN: TRUE, FALSE
 
     I16  D2K_Register_Card (U16 CardType, U16 card_num)
@@ -13,6 +14,10 @@ cdef extern from "d2kdask.h":
     I16  D2K_AI_ContScanChannelsToFile (U16 CardNumber, U16 Channel, U16 BufId,
                U8* FileName, U32 ScanCount, U32 ScanIntrv, U32 SampIntrv, U16 SyncMode)
     I16  D2K_AI_ContBufferReset (U16 wCardNumber)
+
+    # Analog output functions
+    I16 D2K_AO_CH_Config (U16 wCardNumber, U16 wChannel, U16 wOutputPolarity, U16 wIntOrExtRef, F64 refVoltage)
+    I16 D2K_AO_VWriteChannel (U16 CardNumber, U16 Channel, F64 Voltage)
 
     # A/D Conversion Source Selection
     cdef int DAQ2K_AI_ADCONVSRC_Int
@@ -55,7 +60,12 @@ cdef extern from "d2kdask.h":
     cdef int ErrorFuncNotSupport
     cdef int ErrorTransferCountTooLarge
     cdef int ErrorContIoNotAllowed
+    cdef int ErrorInvalidDaRefVoltage
+    cdef int ErrorDaVoltageOutOfRange
 
+    # Reference
+    cdef int DAQ2K_DA_Int_REF
+    cdef int DAQ2K_DA_Ext_REF
 
     # AD Ranges
     cdef int AD_B_10_V    
@@ -103,3 +113,7 @@ cdef extern from "d2kdask.h":
     cdef int DAQ_2016 
     cdef int DAQ_2020 
     cdef int DAQ_2022 
+
+    # Output polarity
+    cdef int DAQ2K_DA_BiPolar
+    cdef int DAQ2K_DA_UniPolar
