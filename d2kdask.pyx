@@ -164,7 +164,7 @@ cdef class Buffer:
             self.data[i] = new_data[i]
 
     cpdef get_data(self):
-        cdef float[::1] arr = <float [:cpp_vector.size()]>cpp_vector.data()
+        cdef unsigned short[::1] arr = <unsigned short [:self.length]> self.data
         return np.asarray(arr)
 
     def __dealloc__(self):
