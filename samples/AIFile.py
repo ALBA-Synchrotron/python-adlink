@@ -24,11 +24,11 @@ def main():
     card_num = int(input("Please input a card number: "))
 
     if card_type == 0:
-        card_type = d2kdask.Card.DAQ_2005.value
+        card_type = d2kdask.Card.DAQ_2005
     elif card_type == 1:
-        card_type = d2kdask.Card.DAQ_2006.value
+        card_type = d2kdask.Card.DAQ_2006
     elif card_type == 2:
-        card_type = d2kdask.Card.DAQ_2016.value
+        card_type = d2kdask.Card.DAQ_2016
     else:
         print("Wrong card number")
         return -1
