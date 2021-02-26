@@ -4,6 +4,8 @@ from libc.stdlib cimport malloc, free
 from libcpp cimport bool
 import logging
 from enum import Enum
+cimport numpy as cnp
+import numpy as np
 
 class AdlinkException(Exception):
     pass
@@ -140,7 +142,7 @@ class StopMode(Enum):
 
 cdef class Buffer:
     cdef unsigned short* data
-    cdef public d2kdask.U16 _id
+    cdef public d2kdask.U16 id_
     cdef public int card_id
     cdef public int length
 
@@ -151,37 +153,42 @@ cdef class Buffer:
         self.data = <unsigned short *> malloc(n_samples * sizeof(unsigned short))
 
         if buffer_type == BufferType.AnalogInput:
-            create_buffer = d2kdask.D2K_AI_ContBufferSetup
+            err = d2kdask.D2K_AI_ContBufferSetup(card_id, self.data, n_samples, &self.id_)
         elif buffer_type == BufferType.AnalogOutput:
-            create_buffer = d2kdask.D2K_AO_ContBufferSetup
-
-        cdef int err = create_buffer(card_id, self.data, n_samples, &self._id)
+            err = d2kdask.D2K_AO_ContBufferSetup(card_id, self.data, n_samples, &self.id_)        
         error(err)
     
+    cpdef set_data(self, new_data):
+        copy_size = min(len(new_data), self.length)
+        for i in range(copy_size):
+            self.data[i] = new_data[i]
+
+    cpdef get_data(self):
+        cdef float[::1] arr = <float [:cpp_vector.size()]>cpp_vector.data()
+        return np.asarray(arr)
+
     def __dealloc__(self):
         free(self.data)
         d2kdask.D2K_AI_ContBufferReset(self.card_id)
-        logging.info("Dealocating buffer {}".format(self._id))
+        logging.info("Dealocating buffer {}".format(self.id_))
 
 
 
 cdef class D200X:
-    cdef int card_id
-    cdef Buffer buffer
+    cdef public int id_
 
-    def __cinit__(self, int card_type, int card_num):
-        self.card_id = d2kdask.D2K_Register_Card(card_type, card_num)
-        if self.card_id < 0:
-            raise AdlinkException("Error registering card: {}".format(self.card_id))
-        self.buffer = Buffer(self.card_id)
+    def __cinit__(self, card_type, int card_num):
+        self.id_ = d2kdask.D2K_Register_Card(card_type.value, card_num)
+        if self.id_ < 0:
+            raise AdlinkException("Error registering card: {}".format(self.id_))
 
     def __dealloc__(self):
-        logging.info("Dealocating D200X card {}".format(self.card_id))
-        d2kdask.D2K_Release_Card(self.card_id)
+        logging.info("Dealocating D200X card {}".format(self.id_))
+        d2kdask.D2K_Release_Card(self.id_)
 
 
     def ai_channel_config(self, int channel, int range):
-        cdef int err = d2kdask.D2K_AI_CH_Config(self.card_id, channel, range)
+        cdef int err = d2kdask.D2K_AI_CH_Config(self.id_, channel, range)
         if err != d2kdask.NoError:
             raise AdlinkException("Error configuring channel {}: {}".format(channel, err))
     
@@ -192,13 +199,13 @@ cdef class D200X:
                     int m_counter,
                     int re_trigger_counter,
                     d2kdask.BOOLEAN auto_reset_buf):
-        cdef int err = d2kdask.D2K_AI_Config(self.card_id, config_control.value, trigger_control.value, 
+        cdef int err = d2kdask.D2K_AI_Config(self.id_, config_control.value, trigger_control.value, 
                             middle_or_delay_scans, m_counter, re_trigger_counter, auto_reset_buf)
         
         error(err)
 
-    def ai_continuous_scan_to_file(self, filename: str, int largest_channel, int read_scans, int scan_interval, int sample_interval):
-        err = d2kdask.D2K_AI_ContScanChannelsToFile(self.card_id, largest_channel, self.buffer._id, filename, read_scans, scan_interval, sample_interval, d2kdask.SYNCH_OP)
+    def ai_continuous_scan_to_file(self, filename: str, int largest_channel, buffer, int read_scans, int scan_interval, int sample_interval):
+        err = d2kdask.D2K_AI_ContScanChannelsToFile(self.id_, largest_channel, buffer.id_, filename, read_scans, scan_interval, sample_interval, d2kdask.SYNCH_OP)
         if err == d2kdask.NoError:
             return d2kdask.NoError
         else:
@@ -206,45 +213,51 @@ cdef class D200X:
 
 
     def ao_channel_config(self, channel: OutputChannel, output_polarity: Polarity, reference: Reference, float ref_voltage):
-        err = d2kdask.D2K_AO_CH_Config(self.card_id, channel.value, output_polarity.value, reference.value, ref_voltage)
+        err = d2kdask.D2K_AO_CH_Config(self.id_, channel.value, output_polarity.value, reference.value, ref_voltage)
         error(err)
 
 
     def ao_voltage_write_channel(self, channel: OutputChannel, float voltage):
-        err = d2kdask.D2K_AO_VWriteChannel(self.card_id, channel.value, voltage)
+        err = d2kdask.D2K_AO_VWriteChannel(self.id_, channel.value, voltage)
         error(err)
 
     def ao_write_channel(self, channel: OutputChannel, I16 value):
-        err = d2kdask.D2K_AO_VWriteChannel(self.card_id, channel, value)
+        err = d2kdask.D2K_AO_VWriteChannel(self.id_, channel, value)
         error(err)
 
     def ao_simultanious_write_channel(self, int num_channels, buffer: Buffer):
         """
         This function writes the content of the buffer to the channels.
         """
-        err = d2kdask.D2K_AO_SimuWriteChannel(self.card_id, num_channels, buffer.data)
+        err = d2kdask.D2K_AO_SimuWriteChannel(self.id_, num_channels, buffer.data)
         error(err)
 
-    def ao_cont_write_channel(self, channel: OutputChannel, buffer: Buffer, int iterations, int channel_update_interval, definite: Definite, sync_mode: SyncMode):
-        err = d2kdask.D2K_AO_ContWriteChannel(self.card_id, channel.value, buffer._id, buffer.length, iterations, channel_update_interval, definite.value, sync_mode.value)
+    def ao_cont_write_channel(self, channel: OutputChannel, buffer: Buffer, 
+                int iterations, int channel_update_interval, definite, 
+                sync_mode: SyncMode):
+
+        err = d2kdask.D2K_AO_ContWriteChannel(self.id_, channel.value, 
+                buffer.id_, buffer.length, iterations, channel_update_interval, 
+                definite, sync_mode.value)
+        error(err)
 
     
 
 ################################################################################
 # Asynchronous functions
 ################################################################################
-    def ao_async_check(self) -> bool, int:
+    cpdef ao_async_check(self):
         cdef BOOLEAN stopped
         cdef U32 writeCount
-        err = d2kdask.D2K_AO_AsyncCheck(self.card_id, &stopped, &writeCount)
+        err = d2kdask.D2K_AO_AsyncCheck(self.id_, &stopped, &writeCount)
         error(err)
 
-        return bool(stopped), int(writeCount)
+        return stopped, writeCount
 
-    def ao_async_clear(self, stop_mode: StopMode) -> int:
+    cpdef ao_async_clear(self, stop_mode: StopMode):
         cdef U32 updateCount
-        err = d2kdask.D2K_AO_AsyncClear(self.card_id, &updateCount, stop_mode.value)
+        err = d2kdask.D2K_AO_AsyncClear(self.id_, &updateCount, stop_mode.value)
         error(err)
 
-        return int(updateCount)
+        return updateCount
 
