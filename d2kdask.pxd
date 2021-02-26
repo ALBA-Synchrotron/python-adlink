@@ -18,6 +18,11 @@ cdef extern from "d2kdask.h":
     # Analog output functions
     I16 D2K_AO_CH_Config (U16 wCardNumber, U16 wChannel, U16 wOutputPolarity, U16 wIntOrExtRef, F64 refVoltage)
     I16 D2K_AO_VWriteChannel (U16 CardNumber, U16 Channel, F64 Voltage)
+    I16 D2K_AO_ContBufferSetup (U16 CardNumber, void *Buffer, U32 WriteCount, U16 *BufferId)
+    I16 D2K_AO_ContWriteChannel (U16 CardNumber, U16 Channel, U16 BufId, U32 UpdateCount, U32 Iterations, U32 CHUI, U16 definite, U16 SyncMode)
+
+    I16 D2K_AO_AsyncCheck (U16 CardNumber, BOOLEAN *Stopped, U32 *AccessCnt)
+    I16 D2K_AO_AsyncClear (U16 CardNumber, U32 *AccessCnt, U16 stop_mode)
 
     # A/D Conversion Source Selection
     cdef int DAQ2K_AI_ADCONVSRC_Int
@@ -52,6 +57,7 @@ cdef extern from "d2kdask.h":
 
     # Synch/Asynch Operation Modes
     cdef int SYNCH_OP
+    cdef int ASYNCH_OP
 
     # Return Codes
     cdef int NoError
@@ -117,3 +123,8 @@ cdef extern from "d2kdask.h":
     # Output polarity
     cdef int DAQ2K_DA_BiPolar
     cdef int DAQ2K_DA_UniPolar
+
+    # Terminate modes
+    cdef int DAQ2K_DA_TerminateImmediate
+    cdef int DAQ2K_DA_TerminateUC
+    cdef int DAQ2K_DA_TerminateIC
