@@ -14,7 +14,10 @@ cdef extern from "d2kdask.h":
     I16  D2K_AI_ContScanChannelsToFile (U16 CardNumber, U16 Channel, U16 BufId,
                U8* FileName, U32 ScanCount, U32 ScanIntrv, U32 SampIntrv, U16 SyncMode)
     I16  D2K_AI_ContBufferReset (U16 wCardNumber)
+    I16  D2K_AI_ContReadChannelToFile (U16 CardNumber, U16 Channel, U16 BufId,
+               U8 *FileName, U32 ScanCount, U32 ScanIntrv, U32 SampIntrv, U16 SyncMode)
 
+    I16 D2K_AO_Config (U16 wCardNumber, U16 ConfigCtrl, U16 TrigCtrl, U16 ReTrgCnt, U16 DLY1Cnt, U16 DLY2Cnt, BOOLEAN AutoResetBuf);
     # Analog output functions
     I16 D2K_AO_CH_Config (U16 wCardNumber, U16 wChannel, U16 wOutputPolarity, U16 wIntOrExtRef, F64 refVoltage)
     I16 D2K_AO_VWriteChannel (U16 CardNumber, U16 Channel, F64 Voltage)
@@ -128,3 +131,58 @@ cdef extern from "d2kdask.h":
     cdef int DAQ2K_DA_TerminateImmediate
     cdef int DAQ2K_DA_TerminateUC
     cdef int DAQ2K_DA_TerminateIC
+
+################################################################################
+# AO Config
+################################################################################
+
+    # D/A R/W Source selection
+    cdef int DAQ2K_DA_WRSRC_Int
+    cdef int DAQ2K_DA_WRSRC_AFI0
+    cdef int DAQ2K_DA_WRSRC_AFI1
+    cdef int DAQ2K_DA_WRSRC_SSI
+
+    # DA Group Selection
+    cdef int DA_Group_A
+    cdef int DA_Group_B
+    cdef int DA_Group_AB
+
+    # D/A Trigger delay Counter Source Selection
+    cdef int DAQ2K_DA_TDSRC_Int
+    cdef int DAQ2K_DA_TDSRC_AFI0
+    cdef int DAQ2K_DA_TDSRC_GPTC0
+    cdef int DAQ2K_DA_TDSRC_GPTC1
+
+    # D/A Break delay Counter Source Selection
+    cdef int DAQ2K_DA_BDSRC_Int
+    cdef int DAQ2K_DA_BDSRC_AFI0
+    cdef int DAQ2K_DA_BDSRC_GPTC0
+    cdef int DAQ2K_DA_BDSRC_GPTC1
+
+    # Trigger Source Selection
+    cdef int DAQ2K_DA_TRGSRC_SOFT
+    cdef int DAQ2K_DA_TRGSRC_ANA
+    cdef int DAQ2K_DA_TRGSRC_ExtD
+    cdef int DAQ2K_DA_TRSRC_SSI
+
+    # Trigger Mode Selection
+    cdef int DAQ2K_DA_TRGMOD_POST
+    cdef int DAQ2K_DA_TRGMOD_DELAY
+
+    # Re-Trigger Mode Enable
+    cdef int DAQ2K_DA_ReTrigEn
+
+    # Delay2 (Break delay) Mode Enable
+    cdef int DAQ2K_DA_DLY2En
+
+    # Delay1 Source Selection
+    cdef int DAQ2K_DA_Dly1InUI
+    cdef int DAQ2K_DA_Dly1InTimebase
+
+    # Delay2 Source Selection
+    cdef int DAQ2K_DA_Dly2InUI
+    cdef int DAQ2K_DA_Dly2InTimebase
+
+    # External digital trigger polarity
+    cdef int DAQ2K_DA_TrgPositive
+    cdef int DAQ2K_DA_TrgNegative

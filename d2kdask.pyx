@@ -56,7 +56,7 @@ class Trigger:
     class Source(Enum):
         Software = d2kdask.DAQ2K_AI_TRGSRC_SOFT
         AnalogPin = d2kdask.DAQ2K_AI_TRGSRC_ANA
-        ExternalDigitalPin = d2kdask.DAQ2K_AI_TRGSRC_ExtD
+        DigitalPin = d2kdask.DAQ2K_AI_TRGSRC_ExtD
         SSI = d2kdask.DAQ2K_AI_TRSRC_SSI
 
     class Mode(Enum):
@@ -72,6 +72,33 @@ class Trigger:
     class Polarity(Enum):
         Positive = d2kdask.DAQ2K_AI_TrgPositive
         Negative = d2kdask.DAQ2K_AI_TrgNegative
+
+
+class TriggerDA:
+    class Source(Enum):
+        Software = d2kdask.DAQ2K_DA_TRGSRC_SOFT
+        AnalogPin = d2kdask.DAQ2K_DA_TRGSRC_ANA
+        DigitalPin = d2kdask.DAQ2K_DA_TRGSRC_ExtD
+        SSI = d2kdask.DAQ2K_DA_TRSRC_SSI
+    class Mode(Enum):
+        Post = d2kdask.DAQ2K_DA_TRGMOD_POST
+        Delay = d2kdask.DAQ2K_DA_TRGMOD_DELAY
+    class ReTriggerMode(Enum):
+        Enabled = d2kdask.DAQ2K_DA_ReTrigEn
+    
+    class Delay1(Enum):
+        InSamples = d2kdask.DAQ2K_DA_Dly1InUI
+        InTimeBase = d2kdask.DAQ2K_DA_Dly1InTimebase
+    
+    class Delay2(Enum):
+        Enabled = d2kdask.DAQ2K_DA_DLY2En
+        InSamples = d2kdask.DAQ2K_DA_Dly2InUI
+        InTimeBase = d2kdask.DAQ2K_DA_Dly2InTimebase
+        
+    class Polarity(Enum):
+        Positive = d2kdask.DAQ2K_DA_TrgPositive
+        Negative = d2kdask.DAQ2K_DA_TrgNegative
+
     
 class VoltageRange(Enum):
     # AD Ranges
@@ -199,13 +226,26 @@ cdef class D200X:
                     int m_counter,
                     int re_trigger_counter,
                     d2kdask.BOOLEAN auto_reset_buf):
-        cdef int err = d2kdask.D2K_AI_Config(self.id_, config_control.value, trigger_control.value, 
-                            middle_or_delay_scans, m_counter, re_trigger_counter, auto_reset_buf)
+        err = d2kdask.D2K_AI_Config(self.id_, config_control.value, trigger_control.value, 
+                    middle_or_delay_scans, m_counter, re_trigger_counter, auto_reset_buf)
         
         error(err)
 
+    def ao_config(self, 
+                    config_control, 
+                    trigger_control, 
+                    re_trigger_counter, 
+                    delayCount1, 
+                    delayCount2, 
+                    auto_reset_buf):
+        err = d2kdask.D2K_AO_Config(self.id_, config_control, trigger_control, re_trigger_counter, delayCount1, delayCount2, auto_reset_buf)
+
     def ai_continuous_scan_to_file(self, filename: str, int largest_channel, buffer, int read_scans, int scan_interval, int sample_interval):
         err = d2kdask.D2K_AI_ContScanChannelsToFile(self.id_, largest_channel, buffer.id_, filename, read_scans, scan_interval, sample_interval, d2kdask.SYNCH_OP)
+        error(err)
+
+    def ai_continuous_read_channel_to_file(self, channel, buffer, filename, int read_scans, int scan_interval, int sample_interval):
+        err = d2kdask.D2K_AI_ContReadChannelToFile(self.id_, channel, buffer.id_, filename, read_scans, scan_interval, sample_interval, d2kdask.SYNCH_OP)
         error(err)
 
     def ao_channel_config(self, channel: OutputChannel, output_polarity: Polarity, reference: Reference, float ref_voltage):
