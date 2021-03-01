@@ -27,6 +27,8 @@ cpdef error(int error_code):
         raise AdlinkException("ErrorInvalidDaRefVoltage")
     elif error_code == d2kdask.ErrorDaVoltageOutOfRange:
         raise AdlinkException("ErrorDaVoltageOutOfRange")
+    elif error_code == d2kdask.ErrorInvalidSampleRate:
+        raise AdlinkException("Invalid Sample Rate")
     else:
         raise AdlinkException("Unknown error.")
 
@@ -166,6 +168,11 @@ class StopMode(Enum):
     NextCounterUpdate = d2kdask.DAQ2K_DA_TerminateUC
     IterationCount = d2kdask.DAQ2K_DA_TerminateIC
 
+class DAGroup(Enum):
+    A = d2kdask.DA_Group_A
+    B = d2kdask.DA_Group_B
+    AB = d2kdask.DA_Group_AB
+
 
 cdef class Buffer:
     cdef unsigned short* data
@@ -231,6 +238,14 @@ cdef class D200X:
         
         error(err)
 
+    def ai_continuous_scan_to_file(self, filename: str, int largest_channel, buffer, int read_scans, int scan_interval, int sample_interval):
+        err = d2kdask.D2K_AI_ContScanChannelsToFile(self.id_, largest_channel, buffer.id_, filename, read_scans, scan_interval, sample_interval, d2kdask.SYNCH_OP)
+        error(err)
+
+    def ai_continuous_read_channel_to_file(self, channel, buffer, filename, int read_scans, int scan_interval, int sample_interval):
+        err = d2kdask.D2K_AI_ContReadChannelToFile(self.id_, channel, buffer.id_, filename, read_scans, scan_interval, sample_interval, d2kdask.SYNCH_OP)
+        error(err)
+
     def ao_config(self, 
                     config_control, 
                     trigger_control, 
@@ -239,14 +254,13 @@ cdef class D200X:
                     delayCount2, 
                     auto_reset_buf):
         err = d2kdask.D2K_AO_Config(self.id_, config_control, trigger_control, re_trigger_counter, delayCount1, delayCount2, auto_reset_buf)
-
-    def ai_continuous_scan_to_file(self, filename: str, int largest_channel, buffer, int read_scans, int scan_interval, int sample_interval):
-        err = d2kdask.D2K_AI_ContScanChannelsToFile(self.id_, largest_channel, buffer.id_, filename, read_scans, scan_interval, sample_interval, d2kdask.SYNCH_OP)
         error(err)
 
-    def ai_continuous_read_channel_to_file(self, channel, buffer, filename, int read_scans, int scan_interval, int sample_interval):
-        err = d2kdask.D2K_AI_ContReadChannelToFile(self.id_, channel, buffer.id_, filename, read_scans, scan_interval, sample_interval, d2kdask.SYNCH_OP)
-        error(err)
+    def ao_group_setup(self, group, int num_channels, channels):
+        cdef U16 c_channels[4]
+        for i,c in enumerate(channels):
+            c_channels[i] = c
+        d2kdask.D2K_AO_Group_Setup(self.id_, group.value, num_channels, &c_channels[0])
 
     def ao_channel_config(self, channel: OutputChannel, output_polarity: Polarity, reference: Reference, float ref_voltage):
         err = d2kdask.D2K_AO_CH_Config(self.id_, channel.value, output_polarity.value, reference.value, ref_voltage)
@@ -275,6 +289,7 @@ cdef class D200X:
         err = d2kdask.D2K_AO_ContWriteChannel(self.id_, channel.value, 
                 buffer.id_, buffer.length, iterations, channel_update_interval, 
                 definite, sync_mode.value)
+        print("err:", err)
         error(err)
 
     
