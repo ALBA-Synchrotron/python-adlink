@@ -206,11 +206,7 @@ cdef class D200X:
 
     def ai_continuous_scan_to_file(self, filename: str, int largest_channel, buffer, int read_scans, int scan_interval, int sample_interval):
         err = d2kdask.D2K_AI_ContScanChannelsToFile(self.id_, largest_channel, buffer.id_, filename, read_scans, scan_interval, sample_interval, d2kdask.SYNCH_OP)
-        if err == d2kdask.NoError:
-            return d2kdask.NoError
-        else:
-            raise AdlinkException("Error in ai_continuous_scan_to_file")
-
+        error(err)
 
     def ao_channel_config(self, channel: OutputChannel, output_polarity: Polarity, reference: Reference, float ref_voltage):
         err = d2kdask.D2K_AO_CH_Config(self.id_, channel.value, output_polarity.value, reference.value, ref_voltage)
