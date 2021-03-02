@@ -30,28 +30,24 @@ def main():
     wave = generate_wave(freq=440, seconds=1, sample_rate=4000, amplitude=1)
 
     card = D200X(d2kdask.Card.DAQ_2005, 0)
+
+    print("Channel config")
+    card.ao_channel_config(0, Polarity.Bipolar, Reference.Internal, 10.0)
+
+
+    print("AO Config")
+    card.ao_config(config_control=0, trigger_control=TriggerDA.Mode.Post.value |
+                   TriggerDA.Source.DigitalPin.value, re_trigger_counter=1,
+                   delayCount1=0, delayCount2=0, auto_reset_buf=1)
+
     buffer = Buffer(card.id_, n_samples=4000,
                     buffer_type=BufferType.AnalogOutput)
 
     buffer.set_data(wave)
 
-    card.ao_channel_config(
-        OutputChannel.Zero, Polarity.Bipolar, Reference.Internal, 10.0)
-
-    # //DA channel 0 in group A
-    card.ao_group_setup(DAGroup.A, 1, [0])
-    # D2K_AO_Group_Setup (card, DA_Group_A, 1, &da_ch);
-
-    card.ao_config(config_control=0, trigger_control=TriggerDA.Mode.Post.value |
-                   TriggerDA.Source.DigitalPin.value, re_trigger_counter=1,
-                   delayCount1=0, delayCount2=0, auto_reset_buf=1)
-
-    card.ao_cont_write_channel(OutputChannel.Zero, buffer, 3, SCAN_INTERVAL,
-                               SCAN_INTERVAL, SyncMode.Asynchronous)
-
+    print("AO Continous Write Channel")
     card.ao_cont_write_channel(
-        OutputChannel.Zero, buffer, 30, SCAN_INTERVAL, SCAN_INTERVAL,
-        SyncMode.Asynchronous)
+        0, buffer, 3, SCAN_INTERVAL, SCAN_INTERVAL, SyncMode.Asynchronous)
 
     while True:
         stopped, writeCount = card.ao_async_check()
