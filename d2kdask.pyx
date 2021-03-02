@@ -7,31 +7,27 @@ from enum import Enum
 cimport numpy as cnp
 import numpy as np
 
-class AdlinkException(Exception):
+class AdlinkError(Exception):
     pass
 
-cpdef error(int error_code):
+errors_messages = {
+    d2kdask.ErrorInvalidCardNumber: "ErrorInvalidCardNumber",
+    d2kdask.ErrorCardNotRegistered: "CardNotRegistered",
+    d2kdask.ErrorFuncNotSupport: "FunctionalityNotSupported",
+    d2kdask.ErrorTransferCountTooLarge: "TransferCountTooLarge",
+    d2kdask.ErrorContIoNotAllowed: "ErrorContIoNotAllowed",
+    d2kdask.ErrorInvalidDaRefVoltage: "ErrorInvalidDaRefVoltage",
+    d2kdask.ErrorDaVoltageOutOfRange: "ErrorDaVoltageOutOfRange",
+    d2kdask.ErrorInvalidSampleRate: "Invalid Sample Rate"
+}
+
+cpdef error(int error_code, message="Error"):
     if error_code == d2kdask.NoError:
         return
-    elif error_code == d2kdask.ErrorInvalidCardNumber:
-        raise AdlinkException("ErrorInvalidCardNumber")
-    elif error_code == d2kdask.ErrorCardNotRegistered:
-        raise AdlinkException("CardNotRegistered")
-    elif error_code == d2kdask.ErrorFuncNotSupport:
-        raise AdlinkException("FunctionalityNotSupported")
-    elif error_code == d2kdask.ErrorTransferCountTooLarge:
-        raise AdlinkException("TransferCountTooLarge")
-    elif error_code == d2kdask.ErrorContIoNotAllowed:
-        raise AdlinkException("ErrorContIoNotAllowed")
-    elif error_code == d2kdask.ErrorInvalidDaRefVoltage:
-        raise AdlinkException("ErrorInvalidDaRefVoltage")
-    elif error_code == d2kdask.ErrorDaVoltageOutOfRange:
-        raise AdlinkException("ErrorDaVoltageOutOfRange")
-    elif error_code == d2kdask.ErrorInvalidSampleRate:
-        raise AdlinkException("Invalid Sample Rate")
-    else:
-        raise AdlinkException("Unknown error.")
-
+    elif error_code in errors_messages:
+        raise AdlinkError(errors_messages[error_code])
+    
+    raise AdlinkError("Unknown error")
 
 class Card(Enum):
     DAQ_2010= d2kdask.DAQ_2010
@@ -214,7 +210,7 @@ cdef class D200X:
     def __cinit__(self, card_type, int card_num):
         self.id_ = d2kdask.D2K_Register_Card(card_type.value, card_num)
         if self.id_ < 0:
-            raise AdlinkException("Error registering card: {}".format(self.id_))
+            raise AdlinkError("Error registering card: {}".format(self.id_))
 
     def __dealloc__(self):
         logging.info("Dealocating D200X card {}".format(self.id_))
@@ -224,7 +220,7 @@ cdef class D200X:
     def ai_channel_config(self, int channel, int range):
         cdef int err = d2kdask.D2K_AI_CH_Config(self.id_, channel, range)
         if err != d2kdask.NoError:
-            raise AdlinkException("Error configuring channel {}: {}".format(channel, err))
+            raise AdlinkError("Error configuring channel {}: {}".format(channel, err))
     
     def ai_config(self, 
                     config_control: ADConversionSourceSelection,
@@ -257,13 +253,14 @@ cdef class D200X:
         error(err)
 
     def ao_group_setup(self, group, int num_channels, channels):
-        cdef U16 c_channels[4]
-        for i,c in enumerate(channels):
-            c_channels[i] = c
-        d2kdask.D2K_AO_Group_Setup(self.id_, group.value, num_channels, &c_channels[0])
+        cdef U16 c_channels[1]
+        c_channels[0] = 0
+        
+        err = d2kdask.D2K_AO_Group_Setup(self.id_, d2kdask.DA_Group_A, 1, &c_channels[0])
+        error(err)
 
-    def ao_channel_config(self, channel: OutputChannel, output_polarity: Polarity, reference: Reference, float ref_voltage):
-        err = d2kdask.D2K_AO_CH_Config(self.id_, channel.value, output_polarity.value, reference.value, ref_voltage)
+    def ao_channel_config(self, int channel, output_polarity: Polarity, reference: Reference, float ref_voltage):
+        err = d2kdask.D2K_AO_CH_Config(self.id_, channel, output_polarity.value, reference.value, ref_voltage)
         error(err)
 
 
@@ -275,22 +272,20 @@ cdef class D200X:
         err = d2kdask.D2K_AO_VWriteChannel(self.id_, channel, value)
         error(err)
 
-    def ao_simultanious_write_channel(self, int num_channels, buffer: Buffer):
+    def ao_simultanious_write_channel(self, int num_channels, Buffer buffer):
         """
         This function writes the content of the buffer to the channels.
         """
         err = d2kdask.D2K_AO_SimuWriteChannel(self.id_, num_channels, buffer.data)
         error(err)
 
-    def ao_cont_write_channel(self, channel: OutputChannel, buffer: Buffer, 
-                int iterations, int channel_update_interval, definite, 
-                sync_mode: SyncMode):
+    def ao_cont_write_channel(self, int channel, buffer: Buffer, int iterations, int channel_update_interval, int definite, syncMode):
 
-        err = d2kdask.D2K_AO_ContWriteChannel(self.id_, channel.value, 
+        err = d2kdask.D2K_AO_ContWriteChannel(self.id_, 0, 
                 buffer.id_, buffer.length, iterations, channel_update_interval, 
-                definite, sync_mode.value)
-        print("err:", err)
+                definite, syncMode.value)
         error(err)
+
 
     
 
